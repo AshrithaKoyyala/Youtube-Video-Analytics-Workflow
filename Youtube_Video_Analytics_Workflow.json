@@ -1,0 +1,315 @@
+{
+  "name": "Youtube_Video_Analytics_Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        -320
+      ],
+      "id": "fb8328d3-aac6-4e2e-814a-90e8be188b1f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3cbd9c55-0b8a-4dbe-80f1-8c7ed9ca0e06",
+              "name": "Video_url",
+              "value": "https://youtu.be/ad79nYk2keg?si=vYHJHxCO1vCHqyTw",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -560,
+        -320
+      ],
+      "id": "a42244e3-66b8-4356-b85b-84f1430b0a69",
+      "name": "Youtube_url"
+    },
+    {
+      "parameters": {
+        "url": "https://youtube-transcriptor.p.rapidapi.com/transcript",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "video_id",
+              "value": "ad79nYk2keg"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-rapidapi-key",
+              "value": "2fb9ff8113msh32303cabf3c8d39p18e5aajsn1378e81f7e96"
+            },
+            {
+              "name": "x-rapidapi-host",
+              "value": "youtube-transcriptor.p.rapidapi.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -272,
+        -320
+      ],
+      "id": "74234673-15ad-4cab-a937-fe3952ad34bc",
+      "name": "Transcription"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a Youtube content analyst.\nReturn structured,concise insights."
+            },
+            {
+              "content": "=You are given a YouTube video transcript.\n\n{{ $json.transcriptionAsText }}\n\nCreate a clear summary with:\n- main_topic\n- intended_audience\n- key_takeaways (as an array of bullet points)\n\nReturn the response strictly in JSON using this format:\n{\n  \"main_topic\": \"\",\n  \"intended_audience\": \"\",\n  \"key_takeaways\": []\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        -320
+      ],
+      "id": "4bed31cf-80c4-4303-8c14-02d17438248d",
+      "name": "Summarization",
+      "credentials": {
+        "openAiApi": {
+          "id": "TvPU78s23goYyPN0",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are given a YouTube video transcript.\n\n{{ $node[\"Transcription\"].json.transcriptionAsText }}\n\nIdentify 3 to 5 high-impact moments suitable for short-form video clips.\n\nRules:\n- Each clip must be 15 to 45 seconds\n- Moments should be self-contained and interesting\n- Avoid music-only or filler parts\n\nReturn ONLY valid JSON in this format:\n\n{\n  \"clips\": [\n    {\n      \"start\": \"00:01:10\",\n      \"end\": \"00:01:40\",\n      \"reason\": \"Clear explanation of Artificial Intelligence\"\n    }\n  ]\n}\nReturn ONLY valid JSON. No markdown. No backticks. No explanation. No text outside JSON.\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        -96
+      ],
+      "id": "2883db3f-d7f3-42bb-9384-f46fbc69190c",
+      "name": "Clip_Finder",
+      "credentials": {
+        "openAiApi": {
+          "id": "TvPU78s23goYyPN0",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8080/v1/video/trim",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "my-secret-key-30052003"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "video_url",
+              "value": "https://youtu.be/ad79nYk2keg?si=vYHJHxCO1vCHqyTw"
+            },
+            {
+              "name": "start",
+              "value": "={{$json.start}}"
+            },
+            {
+              "name": "end",
+              "value": "={{ $json.end }}"
+            },
+            {
+              "name": "id",
+              "value": "={{ $json.reason }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        96,
+        -80
+      ],
+      "id": "29783272-4d29-49c3-9954-f51cd0fcd6e4",
+      "name": "Trim Video Clips",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get raw text from Clip_Finder output\nconst rawText = $json.output[0].content[0].text;\n\n// Parse JSON string\nconst parsed = JSON.parse(rawText);\n\n// Convert clips array into individual items\nreturn parsed.clips.map(clip => ({\n  json: {\n    start: clip.start,\n    end: clip.end,\n    reason: clip.reason\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        -96
+      ],
+      "id": "239d9a36-1038-4767-ab81-8793a5613389",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -144,
+        -96
+      ],
+      "id": "efdf9e57-bbbf-4f27-aced-a1273f25a999",
+      "name": "Loop Over Items"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Youtube_url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Youtube_url": {
+      "main": [
+        [
+          {
+            "node": "Transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcription": {
+      "main": [
+        [
+          {
+            "node": "Summarization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarization": {
+      "main": [
+        [
+          {
+            "node": "Clip_Finder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clip_Finder": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trim Video Clips": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Trim Video Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "dbe3c72a-1f44-4021-97da-7d9ec51c0e6f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c11a305c8a53150e1500331862219bfae4273608c7a6377d8bf32e1b44353161"
+  },
+  "id": "g8tiij1Jh3RZg3eL",
+  "tags": []
+}
