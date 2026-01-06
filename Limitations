@@ -1,0 +1,6 @@
+## Limitations
+
+- Video clip generation could not be completed using the no-code-architects-toolkit
+- FFmpeg required cloud storage configuration which was not available locally
+- Some YouTube URLs are blocked for direct media download
+- Rate limits affected transcript APIs during testing
